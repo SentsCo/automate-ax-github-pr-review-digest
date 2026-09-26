@@ -41,7 +41,7 @@ export default automation(
           )
           .map(
             (request) =>
-              `• <${request.html_url}|#${request.number} ${request.title}> — waiting for ${[
+              `• #${request.number} ${request.title} — ${request.html_url} — waiting for ${[
                 ...(request.requested_reviewers ?? []).map(
                   (reviewer) => reviewer.login,
                 ),
@@ -55,8 +55,18 @@ export default automation(
 
     slack.sendMessage({
       conversation: parameters.slackChannelId,
-      text: t`Pull requests awaiting review (first 100 open PRs):\n${pending.lines.transform((lines) => lines.join("\n"))}\n${pending.atLimit.transform((atLimit) => (atLimit ? "The page limit was reached. Add pagination before treating this digest as complete." : ""))}`,
+      text: t`Pull requests awaiting review (first 100 open PRs):\n${pending.lines.transform((lines) => lines.join("\n"))}\n${pending.atLimit.transform((atLimit) => (atLimit ? "The page limit was reached. Add pagination before treating this digest as complete." : ""))}`.transform(
+        escapeSlackText,
+      ),
       unfurlLinks: false,
     })
   },
 )
+
+/** Keeps provider text from becoming Slack mentions or control markup. */
+function escapeSlackText(text: string) {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+}
